@@ -1,4 +1,4 @@
-id = "chalk"
+id = "chalk-lsp"
 name = "Chalk"
 description = "Chalk language intelligence for Python and SQL resolvers"
 version = "0.1.0"
