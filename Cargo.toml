@@ -1,0 +1,17 @@
+[package]
+name = "chalk-zed"
+version = "0.1.0"
+edition = "2021"
+publish = false
+license = "MIT"
+
+[lib]
+path = "src/lib.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+flate2 = "1.0"
+sha2 = "0.10"
+tar = "0.4"
+zed_extension_api = "0.7.0"
+zip = { version = "2.2", default-features = false, features = ["deflate"] }

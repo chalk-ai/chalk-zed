@@ -1,0 +1,5 @@
+name = "Chalk YAML"
+grammar = "yaml"
+path_suffixes = ["chalk.yml", "chalk.yaml"]
+line_comments = ["# "]
+tab_size = 2

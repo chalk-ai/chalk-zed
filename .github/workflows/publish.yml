@@ -1,0 +1,66 @@
+name: Publish Extension
+
+on:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate release versions
+        shell: bash
+        run: |
+          extension_version="$(sed -n 's/^version = "\([^"]*\)"$/\1/p' extension.toml | head -n 1)"
+          crate_version="$(sed -n 's/^version = "\([^"]*\)"$/\1/p' Cargo.toml | head -n 1)"
+          lsp_version="$(sed -n 's/^const CHALK_LSP_VERSION: &str = "\([^"]*\)";$/\1/p' src/lib.rs)"
+
+          test "$extension_version" = "$GITHUB_REF_NAME" || {
+            echo "::error::extension.toml version $extension_version does not match tag $GITHUB_REF_NAME"
+            exit 1
+          }
+          test "$crate_version" = "$GITHUB_REF_NAME" || {
+            echo "::error::Cargo.toml version $crate_version does not match tag $GITHUB_REF_NAME"
+            exit 1
+          }
+          [[ "$lsp_version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+            echo "::error::Invalid CHALK_LSP_VERSION: $lsp_version"
+            exit 1
+          }
+
+      - name: Install WebAssembly target
+        run: rustup target add wasm32-wasip2
+
+      - name: Check formatting
+        run: cargo fmt --check
+
+      - name: Check extension
+        run: cargo check --locked --target wasm32-wasip2
+
+  publish:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require Zed registry token
+        run: test -n "$ZED_EXTENSION_PUBLISH_TOKEN" || { echo "::error::Missing ZED_EXTENSION_PUBLISH_TOKEN repository secret"; exit 1; }
+        env:
+          ZED_EXTENSION_PUBLISH_TOKEN: ${{ secrets.ZED_EXTENSION_PUBLISH_TOKEN }}
+
+      - name: Open Zed registry update
+        uses: huacnlee/zed-extension-action@82920ff0876879f65ffbcfa3403589114a8919c6 # v2
+        with:
+          extension-name: chalk
+          create-pullrequest: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          COMMITTER_TOKEN: ${{ secrets.ZED_EXTENSION_PUBLISH_TOKEN }}

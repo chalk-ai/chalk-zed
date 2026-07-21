@@ -1,0 +1,14 @@
+id = "chalk"
+name = "Chalk"
+description = "Chalk language intelligence for Python and SQL resolvers"
+version = "0.1.0"
+schema_version = 1
+authors = ["Chalk AI, Inc. <support@chalk.ai>"]
+repository = "https://github.com/chalk-ai/chalk-zed"
+capabilities = [
+  { kind = "download_file", host = "artifactregistry.googleapis.com", path = ["**"] },
+]
+
+[language_servers.chalk-lsp]
+name = "Chalk Language Server"
+languages = ["Python", "Chalk SQL", "Chalk YAML"]

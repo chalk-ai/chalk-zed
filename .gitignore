@@ -1,0 +1,8 @@
+/target/
+*.wasm
+/server/
+/server.new/
+/server.old/
+/archive.sha256
+/chalk-lsp-*.tar.gz
+/chalk-lsp-*.zip
