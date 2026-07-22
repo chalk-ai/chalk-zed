@@ -3,6 +3,7 @@
 /server/
 /server.new/
 /server.old/
+/versions.json
 /archive.sha256
 /chalk-lsp-*.tar.gz
 /chalk-lsp-*.zip

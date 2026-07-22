@@ -5,18 +5,24 @@ use std::io;
 use zed_extension_api::{self as zed, LanguageServerId, Result};
 
 const REGISTRY: &str = "https://artifactregistry.googleapis.com";
-const CHALK_LSP_VERSION: &str = "v2.154.9";
 
-struct ChalkExtension;
+struct ChalkExtension {
+    cached_binary_path: Option<String>,
+}
 
 impl ChalkExtension {
-    fn server_path(&self, language_server_id: &LanguageServerId) -> Result<String> {
+    fn server_path(&mut self, language_server_id: &LanguageServerId) -> Result<String> {
         let windows = matches!(zed::current_platform().0, zed::Os::Windows);
         let (executable, backup_executable) = if windows {
             ("server/chalk-lsp.exe", "server.old/chalk-lsp.exe")
         } else {
             ("server/chalk-lsp", "server.old/chalk-lsp")
         };
+        if let Some(path) = &self.cached_binary_path {
+            if fs::metadata(path).is_ok_and(|metadata| metadata.is_file()) {
+                return Ok(path.clone());
+            }
+        }
         let mut installed_version = fs::read_to_string("server/installed-version")
             .ok()
             .map(|version| version.trim().to_string())
@@ -60,12 +66,6 @@ impl ChalkExtension {
                 server_is_valid = true;
             }
         }
-        if server_is_valid && installed_version.as_deref() == Some(CHALK_LSP_VERSION) {
-            fs::remove_dir_all("server.old").ok();
-            fs::remove_dir_all("server.new").ok();
-            return Ok(executable.to_string());
-        }
-
         let server_exists = server_is_valid;
 
         let result = (|| {
@@ -73,6 +73,45 @@ impl ChalkExtension {
                 language_server_id,
                 &zed::LanguageServerInstallationStatus::CheckingForUpdate,
             );
+            zed::download_file(
+                &format!(
+                    "{REGISTRY}/v1/projects/chalk-prod/locations/us/repositories/chalk-lsp/packages/chalk-lsp/versions?pageSize=1000"
+                ),
+                "versions.json",
+                zed::DownloadedFileType::Uncompressed,
+            )?;
+            let versions = zed::serde_json::from_str::<zed::serde_json::Value>(
+                &fs::read_to_string("versions.json").map_err(|error| error.to_string())?,
+            )
+            .map_err(|error| error.to_string())?;
+            let version = versions
+                .get("versions")
+                .and_then(zed::serde_json::Value::as_array)
+                .into_iter()
+                .flatten()
+                .filter_map(|version| version.get("name")?.as_str()?.rsplit('/').next())
+                .filter_map(|version| {
+                    let parts = version
+                        .strip_prefix('v')?
+                        .split('.')
+                        .map(str::parse::<u64>)
+                        .collect::<std::result::Result<Vec<_>, _>>()
+                        .ok()?;
+                    (parts.len() == 3).then(|| (parts, version.to_string()))
+                })
+                .max_by(|(left_parts, left), (right_parts, right)| {
+                    left_parts.cmp(right_parts).then_with(|| left.cmp(right))
+                })
+                .map(|(_, version)| version)
+                .ok_or("could not determine the latest chalk-lsp release")?;
+
+            if server_is_valid && installed_version.as_deref() == Some(version.as_str()) {
+                fs::remove_dir_all("server.old").ok();
+                fs::remove_dir_all("server.new").ok();
+                fs::remove_file("versions.json").ok();
+                return Ok(executable.to_string());
+            }
+
             let (os, architecture) = zed::current_platform();
             let target = match (os, architecture) {
                 (zed::Os::Mac, zed::Architecture::X8664) => "x86_64-apple-darwin",
@@ -85,9 +124,9 @@ impl ChalkExtension {
                 }
             };
             let extension = if windows { "zip" } else { "tar.gz" };
-            let archive_name = format!("chalk-lsp-{CHALK_LSP_VERSION}-{target}.{extension}");
+            let archive_name = format!("chalk-lsp-{version}-{target}.{extension}");
             let download_base = format!(
-                "{REGISTRY}/download/v1/projects/chalk-prod/locations/us/repositories/chalk-lsp/files/chalk-lsp:{CHALK_LSP_VERSION}:"
+                "{REGISTRY}/download/v1/projects/chalk-prod/locations/us/repositories/chalk-lsp/files/chalk-lsp:{version}:"
             );
 
             zed::set_language_server_installation_status(
@@ -159,11 +198,8 @@ impl ChalkExtension {
             {
                 return Err(format!("{archive_name} did not contain chalk-lsp"));
             }
-            fs::write(
-                "server.new/installed-version",
-                format!("{CHALK_LSP_VERSION}\n"),
-            )
-            .map_err(|error| error.to_string())?;
+            fs::write("server.new/installed-version", format!("{version}\n"))
+                .map_err(|error| error.to_string())?;
 
             match fs::remove_dir_all("server.old") {
                 Ok(()) => {}
@@ -187,6 +223,7 @@ impl ChalkExtension {
             fs::remove_dir_all("server.old").ok();
             fs::remove_file(&archive_name).ok();
             fs::remove_file("archive.sha256").ok();
+            fs::remove_file("versions.json").ok();
             Ok(executable.to_string())
         })();
 
@@ -196,6 +233,7 @@ impl ChalkExtension {
                     language_server_id,
                     &zed::LanguageServerInstallationStatus::None,
                 );
+                self.cached_binary_path = Some(path.clone());
                 Ok(path)
             }
             Err(error) => {
@@ -210,6 +248,7 @@ impl ChalkExtension {
                         .map(|version| !version.trim().is_empty())
                         .unwrap_or(false);
                 if previous_server_is_valid {
+                    self.cached_binary_path = Some(executable.to_string());
                     Ok(executable.to_string())
                 } else {
                     Err(error)
@@ -221,7 +260,9 @@ impl ChalkExtension {
 
 impl zed::Extension for ChalkExtension {
     fn new() -> Self {
-        Self
+        Self {
+            cached_binary_path: None,
+        }
     }
 
     fn language_server_command(

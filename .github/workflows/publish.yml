@@ -23,7 +23,6 @@ jobs:
         run: |
           extension_version="$(sed -n 's/^version = "\([^"]*\)"$/\1/p' extension.toml | head -n 1)"
           crate_version="$(sed -n 's/^version = "\([^"]*\)"$/\1/p' Cargo.toml | head -n 1)"
-          lsp_version="$(sed -n 's/^const CHALK_LSP_VERSION: &str = "\([^"]*\)";$/\1/p' src/lib.rs)"
 
           test "$extension_version" = "$GITHUB_REF_NAME" || {
             echo "::error::extension.toml version $extension_version does not match tag $GITHUB_REF_NAME"
@@ -33,11 +32,6 @@ jobs:
             echo "::error::Cargo.toml version $crate_version does not match tag $GITHUB_REF_NAME"
             exit 1
           }
-          [[ "$lsp_version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
-            echo "::error::Invalid CHALK_LSP_VERSION: $lsp_version"
-            exit 1
-          }
-
       - name: Install WebAssembly target
         run: rustup target add wasm32-wasip2
 

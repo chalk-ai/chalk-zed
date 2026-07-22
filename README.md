@@ -15,9 +15,9 @@ Until the extension is in Zed's registry, open the Extensions page, choose **Ins
 
 The explicit server list makes Chalk the sole Python language server for that project. Zed may ask you to trust the worktree before applying project settings.
 
-Each extension release pins a specific `chalk-lsp` release. On first use the extension downloads the pinned macOS/Linux x86-64 or ARM64 build, or Windows x86-64 build, and verifies its SHA-256 checksum.
+On first use the extension downloads the latest macOS/Linux x86-64 or ARM64 build, or Windows x86-64 build, and verifies its SHA-256 checksum. The extension and `chalk-lsp` versions are independent.
 
-When a newer extension release is available, click **Upgrade** for Chalk on Zed's Extensions page. Zed reloads the extension, and the extension replaces its managed `chalk-lsp` if the new release pins a different version. It does not perform background update checks of its own.
+When Zed loads a fresh instance of the extension and starts Chalk, the extension checks for a newer `chalk-lsp` once. Further server starts and restarts handled by that extension instance reuse the resolved binary. If the release lookup or upgrade fails, an existing valid installation remains available, including while offline.
 
 To see the installed `chalk-lsp` version, click Zed's language-server status icon and open **Chalk Language Server**. Zed displays the version reported by the running server next to its status.
 
@@ -27,6 +27,6 @@ Open `zed: open log` to troubleshoot installation or startup.
 
 ## Development and publication
 
-Install this repository as a dev extension to compile and exercise it. To ship a new `chalk-lsp`, update `CHALK_LSP_VERSION` and bump the version in both `extension.toml` and `Cargo.toml`.
+Install this repository as a dev extension to compile and exercise it. Routine `chalk-lsp` releases do not require a new extension release. For extension changes, bump the version in both `extension.toml` and `Cargo.toml`.
 
 Initial publication requires a PR adding the public `chalk-ai/chalk-zed` repository as the `chalk` submodule in `zed-industries/extensions`. After that PR is merged, pushing a bare semantic-version tag matching both manifests validates the WebAssembly build and opens the registry update PR automatically. The repository must have a `ZED_EXTENSION_PUBLISH_TOKEN` secret containing a personal access token with `repo` and `workflow` scopes; the publishing action creates or reuses that account's fork of `zed-industries/extensions`.
