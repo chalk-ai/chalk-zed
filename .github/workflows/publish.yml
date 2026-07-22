@@ -53,7 +53,7 @@ jobs:
       - name: Open Zed registry update
         uses: huacnlee/zed-extension-action@82920ff0876879f65ffbcfa3403589114a8919c6 # v2
         with:
-          extension-name: chalk
+          extension-name: chalk-lsp
           create-pullrequest: true
         env:
           GITHUB_TOKEN: ${{ github.token }}

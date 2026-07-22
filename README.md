@@ -8,7 +8,7 @@ Until the extension is in Zed's registry, open the Extensions page, choose **Ins
 
 ```json
 {
-  "auto_install_extensions": { "chalk": true },
+  "auto_install_extensions": { "chalk-lsp": true },
   "languages": { "Python": { "language_servers": ["chalk-lsp"] } }
 }
 ```
@@ -28,5 +28,3 @@ Open `zed: open log` to troubleshoot installation or startup.
 ## Development and publication
 
 Install this repository as a dev extension to compile and exercise it. Routine `chalk-lsp` releases do not require a new extension release. For extension changes, bump the version in both `extension.toml` and `Cargo.toml`.
-
-Initial publication requires a PR adding the public `chalk-ai/chalk-zed` repository as the `chalk` submodule in `zed-industries/extensions`. After that PR is merged, pushing a bare semantic-version tag matching both manifests validates the WebAssembly build and opens the registry update PR automatically. The repository must have a `ZED_EXTENSION_PUBLISH_TOKEN` secret containing a personal access token with `repo` and `workflow` scopes; the publishing action creates or reuses that account's fork of `zed-industries/extensions`.
