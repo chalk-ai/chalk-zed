@@ -184,9 +184,9 @@ impl ChalkExtension {
                     {
                         continue;
                     }
-                    entry
-                        .unpack("server.new/chalk-lsp")
+                    let mut destination = fs::File::create("server.new/chalk-lsp")
                         .map_err(|error| error.to_string())?;
+                    io::copy(&mut entry, &mut destination).map_err(|error| error.to_string())?;
                 }
             }
             if fs::metadata(if windows {
@@ -197,6 +197,9 @@ impl ChalkExtension {
             .is_err()
             {
                 return Err(format!("{archive_name} did not contain chalk-lsp"));
+            }
+            if !windows {
+                zed::make_file_executable("server.new/chalk-lsp")?;
             }
             fs::write("server.new/installed-version", format!("{version}\n"))
                 .map_err(|error| error.to_string())?;
