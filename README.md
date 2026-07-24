@@ -4,7 +4,7 @@ This extension downloads and runs `chalk-lsp` for Python, `.chalk.sql`, and Chal
 
 ## Install
 
-Until the extension is in Zed's registry, open the Extensions page, choose **Install Dev Extension**, and select this repository. New projects created by `chalk init` include:
+Install **Chalk** (`chalk-lsp`) from Zed's extension registry. New projects created by `chalk init` include:
 
 ```json
 {
@@ -21,10 +21,14 @@ When Zed loads a fresh instance of the extension and starts Chalk, the extension
 
 To see the installed `chalk-lsp` version, click Zed's language-server status icon and open **Chalk Language Server**. Zed displays the version reported by the running server next to its status.
 
-Lookup, download, checksum, extraction, or replacement failures during an upgrade leave a valid existing server and its version metadata together in the existing `server` directory.
+## Manual installation
 
-Open `zed: open log` to troubleshoot installation or startup.
+Clone this repository, open Zed's Extensions page, choose **Install Dev Extension**, and select the repository.
 
 ## Development and publication
 
 Install this repository as a dev extension to compile and exercise it. Routine `chalk-lsp` releases do not require a new extension release. For extension changes, bump the version in both `extension.toml` and `Cargo.toml`.
+
+## Troubleshooting
+
+Open `zed: open log` for installation and startup failures. Lookup, download, checksum, extraction, or replacement failures during an upgrade leave a valid existing server and its version metadata together in the existing `server` directory.
