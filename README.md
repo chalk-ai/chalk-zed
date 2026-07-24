@@ -1,6 +1,6 @@
 # Chalk for Zed
 
-This extension downloads and runs `chalk-lsp` for Python, `.chalk.sql`, and Chalk configuration buffers in worktrees containing `chalk.yml` or `chalk.yaml`. `chalk-lsp` is Chalk's language-intelligence process: it supplies diagnostics, navigation, and editor features. Dedicated Chalk SQL/YAML language definitions prevent the server from attaching to unrelated SQL or YAML files.
+This extension downloads and runs `chalk-lsp` for Python, `.chalk.sql`, and Chalk configuration buffers in worktrees containing `chalk.yml` or `chalk.yaml`. `chalk-lsp` is Chalk's language-intelligence process: it supplies diagnostics, navigation, and editor features.
 
 ## Install
 
